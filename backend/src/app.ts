@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import todoRoute from "./routes/todo.route.js";
+import { errorMiddleware } from "./middlewares/todo.middleware.js";
 
 const app = express();
 app.use(express.json());
@@ -11,5 +12,8 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/api/todos", todoRoute);
+
+//middlewares
+app.use(errorMiddleware);
 
 export default app;
