@@ -1,46 +1,37 @@
-import type { Request, Response } from "express";
 import Todo from "../models/todo.model.js";
 import {
   todoUpdateValidation,
   todoValidation,
 } from "../validation/todo.validation.js";
 import { stripUndefined } from "../utils/stripUndefined.js";
-import { error } from "node:console";
+import ApiError from "../utils/apiError.js";
+import asyncHandler from "../utils/async-handler.js";
+import { ApiResponse } from "../utils/apiResponse.js";
 
-export const getTodos = async (_req: Request, res: Response) => {
+export const getTodos = asyncHandler(async (_req, res) => {
   const todos = await Todo.find();
-  res.status(200).json({
-    success: true,
-    data: todos,
-  });
-};
+  const response = new ApiResponse(200, todos);
+  res.status(response.statusCode).json(response);
+});
 
-export const createTodo = async (req: Request, res: Response) => {
+export const createTodo = asyncHandler(async (req, res) => {
   const data = req.body;
   const validatedData = todoValidation.parse(data);
   const todo = await Todo.create(stripUndefined(validatedData));
-  res.status(201).json({
-    success: true,
-    data: todo,
-  });
-};
+  const response = new ApiResponse(201, todo);
+  res.status(response.statusCode).json(response);
+});
 
-export const getTodo = async (req: Request, res: Response) => {
+export const getTodo = asyncHandler(async (req, res) => {
   const todo = await Todo.findById(req.params.id);
   if (!todo) {
-    res.status(404).json({
-      success: false,
-      message: "Todo not found",
-    });
-    return;
+    throw new ApiError(404, "Todo with this ID not found");
   }
-  res.status(200).json({
-    success: true,
-    data: todo,
-  });
-};
+  const response = new ApiResponse(200, todo);
+  res.status(response.statusCode).json(response);
+});
 
-export const updateTodo = async (req: Request, res: Response) => {
+export const updateTodo = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const data = req.body;
   const validData = todoUpdateValidation.parse(data);
@@ -50,30 +41,18 @@ export const updateTodo = async (req: Request, res: Response) => {
     { new: true, runValidators: true },
   );
   if (!updatedTodo) {
-    res.status(404).json({
-      success: false,
-      message: "Todo with this ID not found",
-    });
-    return;
+    throw new ApiError(404, "Todo with this ID not found");
   }
-  res.status(200).json({
-    success: true,
-    data: updatedTodo,
-  });
-};
+  const response = new ApiResponse(200, updatedTodo);
+  res.status(response.statusCode).json(response);
+});
 
-export const deleteTodo = async (req: Request, res: Response) => {
+export const deleteTodo = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const deletedTodo = await Todo.findByIdAndDelete(id);
   if (!deletedTodo) {
-    res.status(404).json({
-      success: false,
-      message: "Todo with this ID not found",
-    });
-    return;
+    throw new ApiError(404, "Todo with this ID not found");
   }
-  res.status(200).json({
-    success: true,
-    data: deletedTodo,
-  });
-};
+  const response = new ApiResponse(200, deletedTodo);
+  res.status(response.statusCode).json(response);
+});

@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
+import ApiError from "../utils/apiError.js";
 
 export const errorMiddleware = (
   error: unknown,
@@ -12,6 +13,16 @@ export const errorMiddleware = (
       success: false,
       message: "validation error",
       error: error.issues,
+    });
+    return;
+  }
+
+  if (error instanceof ApiError) {
+    res.status(error.statusCode).json({
+      success: error.success,
+      message: error.message,
+      errors: error.errors,
+      data: error.data,
     });
     return;
   }
