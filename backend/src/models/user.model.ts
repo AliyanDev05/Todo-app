@@ -1,7 +1,20 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 
-const userSchema = new mongoose.Schema(
+interface IUser {
+  username: string;
+  email: string;
+  password: string;
+  fullName?: string;
+  avatar: {
+    url: string;
+    localPath: string;
+  };
+
+  isPasswordCorrect(password: string): Promise<boolean>;
+}
+
+const userSchema = new mongoose.Schema<IUser>(
   {
     avatar: {
       type: {
@@ -53,5 +66,9 @@ userSchema.pre("save", async function () {
 
   this.password = await bcrypt.hash(this.password, 10);
 });
+
+userSchema.methods.isPasswordCorrect = async function (password: string) {
+  return bcrypt.compare(password, this.password);
+};
 
 export const User = mongoose.model("User", userSchema);
