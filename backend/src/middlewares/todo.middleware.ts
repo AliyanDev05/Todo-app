@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 import ApiError from "../utils/apiError.js";
+import mongoose from "mongoose";
 
 export const errorMiddleware = (
   error: unknown,
@@ -27,7 +28,7 @@ export const errorMiddleware = (
     return;
   }
 
-  if (error instanceof Error && error.name === "CastError") {
+  if (error instanceof Error && mongoose.Error.CastError) {
     res.status(400).json({
       success: false,
       message: "Invalid Id",
