@@ -12,6 +12,7 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/api/todos", todoRoute);
+app.use("/api/auth", todoRoute);
 
 //middlewares
 app.use(errorMiddleware);
