@@ -7,10 +7,50 @@ import { stripUndefined } from "../utils/stripUndefined.js";
 import ApiError from "../utils/apiError.js";
 import asyncHandler from "../utils/async-handler.js";
 import { ApiResponse } from "../utils/apiResponse.js";
+import queryValidation from "../validation/query.validation.js";
+import type { QueryFilter, SortOrder } from "mongoose";
 
-export const getTodos = asyncHandler(async (_req, res) => {
-  const todos = await Todo.find();
-  const response = new ApiResponse(200, todos);
+export const getTodos = asyncHandler(async (req, res) => {
+  const { page, limit, completed, search, sort } = queryValidation.parse(
+    req.query,
+  );
+  const filter: QueryFilter<typeof Todo> = {};
+  if (completed !== undefined) {
+    filter.completed = completed;
+  }
+  if (search) {
+    filter.$or = [
+      { title: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } },
+    ];
+  }
+  let sortOptions: Record<string, SortOrder> = { createdAt: -1 };
+  if (sort) {
+    const field = sort.replace("-", "");
+    const direction = sort.startsWith("-") ? -1 : 1;
+    sortOptions = {
+      [field]: direction,
+    };
+  }
+  const skip = (page - 1) * limit;
+  const totalTodos = await Todo.countDocuments(filter);
+  const totalPages = Math.ceil(totalTodos / limit);
+  const hasNextPage = page < totalPages;
+  const hasPreviousPage = page > 1;
+  const todos = await Todo.find(filter)
+    .sort(sortOptions)
+    .skip(skip)
+    .limit(limit);
+  const response = new ApiResponse(200, {
+    todos,
+    pagination: {
+      totalPages,
+      hasNextPage,
+      hasPreviousPage,
+      currentPage: page,
+      limit,
+    },
+  });
   res.status(response.statusCode).json(response);
 });
 
